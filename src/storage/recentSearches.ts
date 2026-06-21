@@ -4,7 +4,7 @@ export type RecentSearch = {
 };
 
 const RECENT_SEARCHES_KEY = "tracking-recent-searches";
-const MAX_RECENT_SEARCHES = 5;
+const MAX_RECENT_SEARCHES = 100;
 
 export function loadRecentSearches(): RecentSearch[] {
   try {
@@ -34,10 +34,25 @@ export function addRecentSearch(
 ) {
   const updatedSearches = [
     { trackingCode, searchedAt: new Date().toISOString() },
-    ...currentSearches.filter(
-      (search) => search.trackingCode !== trackingCode,
-    ),
+    ...currentSearches.filter((search) => search.trackingCode !== trackingCode),
   ].slice(0, MAX_RECENT_SEARCHES);
+
+  try {
+    localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updatedSearches));
+  } catch {
+    // A consulta continua funcionando se o navegador bloquear o storage.
+  }
+
+  return updatedSearches;
+}
+
+export function removeRecentSearch(
+  currentSearches: RecentSearch[],
+  trackingCode: string,
+) {
+  const updatedSearches = currentSearches.filter(
+    (search) => search.trackingCode !== trackingCode,
+  );
 
   try {
     localStorage.setItem(RECENT_SEARCHES_KEY, JSON.stringify(updatedSearches));

@@ -2,6 +2,7 @@ import type { FormEventHandler } from "react";
 
 import type { RecentSearch } from "../storage/recentSearches";
 import { formatEventDate } from "../utils/date";
+import { ConfirmationModal } from "./ConfirmationModal";
 import { LoadingState } from "./LoadingState";
 
 type TrackingSearchViewProps = {
@@ -12,7 +13,11 @@ type TrackingSearchViewProps = {
   onClearRecentSearches: () => void;
   onCodeChange: (code: string) => void;
   onRecentSearch: (code: string) => void;
+  onRemoveRecentSearch: (code: string) => void;
   onSubmit: FormEventHandler<HTMLFormElement>;
+  pendingRemovalCode?: string | null;
+  onConfirmRemoval: () => void;
+  onCancelRemoval: () => void;
 };
 
 export function TrackingSearchView({
@@ -23,13 +28,17 @@ export function TrackingSearchView({
   onClearRecentSearches,
   onCodeChange,
   onRecentSearch,
+  onRemoveRecentSearch,
   onSubmit,
+  pendingRemovalCode,
+  onConfirmRemoval,
+  onCancelRemoval,
 }: TrackingSearchViewProps) {
   return (
-    <section className="tracker-panel">
+    <section className="tracker-panel tracker-panel--search">
       <div className="tracker-header">
-        <p className="eyebrow">Rastreamento</p>
-        <h1>Consultar objeto</h1>
+        <p className="eyebrow">Consultar objeto</p>
+        <h1>Buscar rastreio</h1>
         <p>
           Informe até 20 códigos de rastreio, separados por vírgula, para
           acompanhar suas entregas.
@@ -53,6 +62,10 @@ export function TrackingSearchView({
       <p className="tracking-code-hint">
         Para consultar mais de um objeto, separe os códigos por vírgula.
       </p>
+      <p className="privacy-note privacy-note--inline">
+        Não armazenamos seus códigos em nossos servidores; os códigos usados
+        ficam salvos apenas localmente no seu navegador.
+      </p>
 
       {error && <div className="message error">{error}</div>}
       {loading && <LoadingState />}
@@ -72,23 +85,44 @@ export function TrackingSearchView({
           <ul>
             {recentSearches.map((search) => (
               <li key={search.trackingCode}>
-                <button
-                  type="button"
-                  onClick={() => onRecentSearch(search.trackingCode)}
-                >
-                  <span>
-                    <strong>{search.trackingCode}</strong>
-                    <small>
-                      Consultado em {formatEventDate(search.searchedAt)}
-                    </small>
-                  </span>
-                  <span className="search-again">Consultar novamente</span>
-                </button>
+                <div className="recent-search-item">
+                  <button
+                    type="button"
+                    className="recent-search-link"
+                    onClick={() => onRecentSearch(search.trackingCode)}
+                  >
+                    <span>
+                      <strong>{search.trackingCode}</strong>
+                      <small>
+                        Consultado em {formatEventDate(search.searchedAt)}
+                      </small>
+                    </span>
+                    <span className="search-again">Consultar novamente</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="recent-search-remove"
+                    onClick={() => onRemoveRecentSearch(search.trackingCode)}
+                    aria-label={`Excluir ${search.trackingCode}`}
+                  >
+                    Excluir
+                  </button>
+                </div>
               </li>
             ))}
           </ul>
         </section>
       )}
+
+      <ConfirmationModal
+        isOpen={Boolean(pendingRemovalCode)}
+        title="Excluir consulta recente?"
+        message={`Deseja realmente remover ${pendingRemovalCode ?? "este item"} do histórico?`}
+        confirmLabel="Sim, excluir"
+        cancelLabel="Cancelar"
+        onConfirm={onConfirmRemoval}
+        onCancel={onCancelRemoval}
+      />
     </section>
   );
 }

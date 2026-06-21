@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-const LOADING_STEP_INTERVAL_MS = 1800;
+const LOADING_STEP_INTERVAL_MS = 3000;
 const LOADING_STEPS = [
   {
     title: "Acessando os Correios",
