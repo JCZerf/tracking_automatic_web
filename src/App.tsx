@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 
 type TrackingEvent = {
@@ -7,11 +7,15 @@ type TrackingEvent = {
   occurred_at: string;
 };
 
-type TrackingResponse = {
+type TrackingResult = {
   tracking_code: string;
   service: string;
   current_status: string;
   events: TrackingEvent[];
+};
+
+type TrackingResponse = {
+  results: TrackingResult[];
 };
 
 type RecentSearch = {
@@ -19,19 +23,46 @@ type RecentSearch = {
   searchedAt: string;
 };
 
+type ApiErrorResponse = {
+  code: string;
+  message: string;
+};
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "");
 const RECENT_SEARCHES_KEY = "tracking-recent-searches";
 const MAX_RECENT_SEARCHES = 5;
+const DOCUMENT_LENGTHS = new Set([11, 14]);
+const MAX_TRACKING_CODES = 20;
+const TRACKING_CODE_PATTERN = /^[A-Z]{2}\d{9}[A-Z]{2}$/;
+const LOADING_STEP_INTERVAL_MS = 1800;
+const LOADING_STEPS = [
+  {
+    title: "Acessando os Correios",
+    description: "Iniciando uma consulta segura para suas entregas.",
+  },
+  {
+    title: "Processando a verificação de segurança",
+    description: "Esta etapa pode levar alguns segundos.",
+  },
+  {
+    title: "Buscando sua entrega",
+    description: "Consultando os eventos mais recentes do rastreamento.",
+  },
+  {
+    title: "Organizando o histórico",
+    description: "Preparando os dados para apresentar o resultado.",
+  },
+] as const;
 
 const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
   dateStyle: "short",
   timeStyle: "short",
 });
 
-function isTrackingResponse(data: unknown): data is TrackingResponse {
+function isTrackingResult(data: unknown): data is TrackingResult {
   if (!data || typeof data !== "object") return false;
 
-  const response = data as Partial<TrackingResponse>;
+  const response = data as Partial<TrackingResult>;
 
   const hasValidEvents =
     Array.isArray(response.events) &&
@@ -51,6 +82,76 @@ function isTrackingResponse(data: unknown): data is TrackingResponse {
     typeof response.current_status === "string" &&
     hasValidEvents
   );
+}
+
+function isTrackingResponse(data: unknown): data is TrackingResponse {
+  if (!data || typeof data !== "object") return false;
+
+  const response = data as Partial<TrackingResponse>;
+  return (
+    Array.isArray(response.results) &&
+    response.results.length > 0 &&
+    response.results.every(isTrackingResult)
+  );
+}
+
+function isApiErrorResponse(data: unknown): data is ApiErrorResponse {
+  if (!data || typeof data !== "object") return false;
+
+  const response = data as Partial<ApiErrorResponse>;
+  return (
+    typeof response.code === "string" &&
+    typeof response.message === "string" &&
+    response.message.trim().length > 0
+  );
+}
+
+function getApiErrorMessage(data: unknown, status: number) {
+  if (isApiErrorResponse(data)) return data.message;
+
+  if (status === 404) return "Um ou mais objetos não foram encontrados.";
+  if (status === 422) return "Informe um código de rastreamento válido.";
+  if (status === 502) {
+    return "Não foi possível consultar os Correios neste momento.";
+  }
+  if (status >= 500) return "O serviço está temporariamente indisponível.";
+  return `Não foi possível concluir a consulta (erro ${status}).`;
+}
+
+function isCpfOrCnpj(value: string) {
+  const digits = value.replace(/\D/g, "");
+  const containsOnlyDocumentCharacters = /^[\d./\-\s]+$/.test(value);
+  return containsOnlyDocumentCharacters && DOCUMENT_LENGTHS.has(digits.length);
+}
+
+function parseTrackingCodes(value: string) {
+  const rawCodes = value.split(",");
+
+  if (rawCodes.length > MAX_TRACKING_CODES) {
+    throw new Error(
+      `Informe no máximo ${MAX_TRACKING_CODES} códigos de rastreamento por consulta.`,
+    );
+  }
+  if (rawCodes.some((code) => isCpfOrCnpj(code))) {
+    throw new Error(
+      "Não é possível consultar com CPF ou CNPJ. Informe apenas códigos de rastreamento.",
+    );
+  }
+
+  const trackingCodes = rawCodes.map((code) =>
+    code.replace(/\s/g, "").toUpperCase(),
+  );
+
+  if (trackingCodes.some((code) => !TRACKING_CODE_PATTERN.test(code))) {
+    throw new Error(
+      "Informe códigos de rastreamento válidos separados por vírgula.",
+    );
+  }
+  if (new Set(trackingCodes).size !== trackingCodes.length) {
+    throw new Error("Não repita códigos na mesma consulta.");
+  }
+
+  return trackingCodes;
 }
 
 function formatEventDate(value: string) {
@@ -139,15 +240,32 @@ function Footer() {
 function App() {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState(0);
   const [error, setError] = useState("");
   const [result, setResult] = useState<TrackingResponse | null>(null);
+  const [activeResultIndex, setActiveResultIndex] = useState(0);
   const [recentSearches, setRecentSearches] =
     useState<RecentSearch[]>(loadRecentSearches);
 
+  useEffect(() => {
+    if (!loading) return;
+
+    const timers = LOADING_STEPS.slice(1).map((_, index) =>
+      window.setTimeout(
+        () => setLoadingStep(index + 1),
+        LOADING_STEP_INTERVAL_MS * (index + 1),
+      ),
+    );
+
+    return () => timers.forEach(window.clearTimeout);
+  }, [loading]);
+
   const searchTrackingCode = async (trackingCode: string) => {
+    setLoadingStep(0);
     setLoading(true);
     setError("");
     setResult(null);
+    setActiveResultIndex(0);
     setCode(trackingCode);
 
     try {
@@ -160,12 +278,8 @@ function App() {
       );
 
       if (!response.ok) {
-        const body = (await response.json().catch(() => null)) as {
-          detail?: string;
-        } | null;
-        throw new Error(
-          body?.detail || `Erro ${response.status} ao consultar a API.`,
-        );
+        const body: unknown = await response.json().catch(() => null);
+        throw new Error(getApiErrorMessage(body, response.status));
       }
 
       const data: unknown = await response.json();
@@ -195,7 +309,9 @@ function App() {
       setResult(data);
     } catch (err) {
       setError(
-        err instanceof Error
+        err instanceof TypeError
+          ? "Não foi possível conectar à API. Verifique sua conexão e tente novamente."
+          : err instanceof Error
           ? err.message
           : "Erro inesperado ao consultar o rastreio.",
       );
@@ -207,14 +323,17 @@ function App() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const trackingCode = code.replace(/\s/g, "").toUpperCase();
-
-    if (!trackingCode) {
-      setError("Digite um código de rastreio para continuar.");
+    try {
+      const trackingCodes = parseTrackingCodes(code);
+      await searchTrackingCode(trackingCodes.join(","));
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Não foi possível validar os códigos informados.",
+      );
       return;
     }
-
-    await searchTrackingCode(trackingCode);
   };
 
   const clearRecentSearches = () => {
@@ -228,11 +347,14 @@ function App() {
 
   const returnToSearch = (clearCode: boolean) => {
     setResult(null);
+    setActiveResultIndex(0);
     setError("");
     if (clearCode) setCode("");
   };
 
   if (result) {
+    const activeResult = result.results[activeResultIndex] ?? result.results[0];
+
     return (
       <main className="app-shell result-screen">
         <BrandHeader />
@@ -240,8 +362,12 @@ function App() {
           <div className="result-page-header">
             <div>
               <p className="eyebrow">Rastreamento</p>
-              <h1>Resultado da consulta</h1>
-              <p>Acompanhe abaixo o histórico completo do seu objeto.</p>
+              <h1>
+                {result.results.length > 1
+                  ? `${result.results.length} objetos encontrados`
+                  : "Resultado da consulta"}
+              </h1>
+              <p>Acompanhe abaixo o histórico completo de cada objeto.</p>
             </div>
             <button
               className="back-button"
@@ -252,29 +378,50 @@ function App() {
             </button>
           </div>
 
-          <section className="result-panel">
+          {result.results.length > 1 && (
+            <div className="result-tabs" role="tablist" aria-label="Objetos consultados">
+              {result.results.map((trackingResult, index) => (
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={activeResultIndex === index}
+                  className={activeResultIndex === index ? "is-active" : undefined}
+                  key={trackingResult.tracking_code}
+                  onClick={() => setActiveResultIndex(index)}
+                >
+                  <span>Objeto {index + 1}</span>
+                  <strong>{trackingResult.tracking_code}</strong>
+                </button>
+              ))}
+            </div>
+          )}
+
+          <section
+            className="result-panel"
+            role={result.results.length > 1 ? "tabpanel" : undefined}
+          >
             <div className="result-summary">
               <div>
                 <span className="result-label">Código de rastreio</span>
-                <strong>{result.tracking_code}</strong>
+                <strong>{activeResult.tracking_code}</strong>
               </div>
               <div>
                 <span className="result-label">Serviço</span>
-                <strong>{result.service}</strong>
+                <strong>{activeResult.service}</strong>
               </div>
             </div>
 
             <div className="current-status">
               <span>Status atual</span>
-              <strong>{result.current_status}</strong>
+              <strong>{activeResult.current_status}</strong>
             </div>
 
             <div className="tracking-history">
               <h2>Histórico do objeto</h2>
 
-              {result.events.length > 0 ? (
+              {activeResult.events.length > 0 ? (
                 <ol className="timeline">
-                  {result.events.map((trackingEvent, index) => (
+                  {activeResult.events.map((trackingEvent, index) => (
                     <li
                       key={`${trackingEvent.occurred_at}-${index}`}
                       className={index === 0 ? "is-current" : undefined}
@@ -323,8 +470,8 @@ function App() {
           <p className="eyebrow">Rastreamento</p>
           <h1>Consultar objeto</h1>
           <p>
-            Informe o código de rastreio para acompanhar o status da sua
-            entrega.
+            Informe até 20 códigos de rastreio, separados por vírgula, para
+            acompanhar suas entregas.
           </p>
         </div>
 
@@ -333,7 +480,7 @@ function App() {
             type="text"
             value={code}
             onChange={(event) => setCode(event.target.value)}
-            placeholder="Ex.: TJ 000 000 000 BR"
+            placeholder="Ex.: TJ000000000BR, AP000000000BR"
             aria-label="Código de rastreio"
             autoComplete="off"
             spellCheck={false}
@@ -342,15 +489,18 @@ function App() {
             {loading ? "Consultando..." : "Buscar"}
           </button>
         </form>
+        <p className="tracking-code-hint">
+          Para consultar mais de um objeto, separe os códigos por vírgula.
+        </p>
 
         {error && <div className="message error">{error}</div>}
 
         {loading && (
           <div className="loading-state" role="status" aria-live="polite">
             <span className="spinner" aria-hidden="true" />
-            <div>
-              <strong>Consultando seu objeto</strong>
-              <p>A primeira consulta pode levar alguns segundos.</p>
+            <div className="loading-copy" key={loadingStep}>
+              <strong>{LOADING_STEPS[loadingStep].title}</strong>
+              <p>{LOADING_STEPS[loadingStep].description}</p>
             </div>
           </div>
         )}

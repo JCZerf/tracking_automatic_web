@@ -1,73 +1,171 @@
-# React + TypeScript + Vite
+# Tracking Automatic Web
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend do **Tracking Automatic**, uma aplicação web para consultar e acompanhar o histórico de objetos dos Correios.
 
-Currently, two official plugins are available:
+A interface consome a API do projeto, apresenta o status atual da encomenda e organiza os eventos de rastreamento em uma linha do tempo responsiva.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Aplicação em produção
 
-## React Compiler
+[Acessar o Tracking Automatic](https://tracking-automatic-web.vercel.app)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+> A primeira consulta pode demorar alguns segundos caso a API esteja inicializando o serviço de OCR.
 
-## Expanding the ESLint configuration
+## Funcionalidades
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- consulta de até 20 objetos por vez, com códigos separados por vírgula;
+- bloqueio de consultas por CPF ou CNPJ;
+- navegação por abas entre os objetos consultados;
+- exibição do status atual e do serviço postal;
+- histórico completo dos eventos em formato de linha do tempo;
+- lista das cinco consultas mais recentes no navegador;
+- nova consulta a partir do histórico local;
+- estados visuais de carregamento e erro;
+- validação do formato da resposta recebida da API;
+- layout responsivo para dispositivos móveis e desktop;
+- suporte à preferência de movimento reduzido do sistema.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Tecnologias
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- [React](https://react.dev/)
+- [TypeScript](https://www.typescriptlang.org/)
+- [Vite](https://vite.dev/)
+- [ESLint](https://eslint.org/)
+- CSS responsivo sem biblioteca de componentes
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Arquitetura
+
+O frontend é uma aplicação de página única que se comunica com a API por HTTP.
+
+```text
+Navegador
+   |
+   | GET /tracking?code=<codigo1,codigo2>
+   v
+Tracking API
+   |
+   v
+Correios + OCR de CAPTCHA
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+As consultas recentes são armazenadas no `localStorage`. Nenhum dado de rastreamento é persistido pelo frontend em banco de dados.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Requisitos
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- Node.js `20.19+` ou `22.12+`
+- npm
+- uma instância da Tracking API em execução
+
+## Configuração local
+
+1. Instale as dependências:
+
+```powershell
+npm install
 ```
+
+2. Crie o arquivo de ambiente a partir do exemplo:
+
+```powershell
+Copy-Item .env.example .env.local
+```
+
+3. Defina em `.env.local` o endereço da API:
+
+```dotenv
+VITE_API_BASE_URL=http://127.0.0.1:8000
+```
+
+4. Inicie o servidor de desenvolvimento:
+
+```powershell
+npm run dev
+```
+
+A aplicação estará disponível em `http://localhost:5173`.
+
+## Variáveis de ambiente
+
+| Variável | Obrigatória | Descrição |
+| --- | --- | --- |
+| `VITE_API_BASE_URL` | Sim | URL base da Tracking API, sem o caminho `/tracking`. |
+
+Variáveis com o prefixo `VITE_` são incorporadas ao bundle no momento do build. Portanto, elas não devem conter segredos.
+
+## Contrato com a API
+
+O frontend realiza a seguinte requisição:
+
+```http
+GET /tracking?code=TJ481246775BR%2CAP073539958BR
+```
+
+Exemplo resumido de resposta esperada:
+
+```json
+{
+  "results": [
+    {
+      "tracking_code": "TJ481246775BR",
+      "service": "SEDEX",
+      "current_status": "Objeto entregue ao destinatário",
+      "events": [
+        {
+          "description": "Objeto entregue ao destinatário",
+          "details": [],
+          "occurred_at": "2026-05-22T12:44:04-03:00"
+        }
+      ]
+    },
+    {
+      "tracking_code": "AP073539958BR",
+      "service": "ENCOMENDA PAC",
+      "current_status": "Objeto em transferência - por favor aguarde",
+      "events": []
+    }
+  ]
+}
+```
+
+O contrato sempre contém `results`, inclusive em consultas individuais. Antes de atualizar a interface, a aplicação verifica em tempo de execução se todos os resultados possuem a estrutura esperada.
+
+## Scripts disponíveis
+
+| Comando | Descrição |
+| --- | --- |
+| `npm run dev` | Inicia o servidor de desenvolvimento. |
+| `npm run build` | Valida os tipos e gera o bundle de produção. |
+| `npm run lint` | Executa a análise estática com ESLint. |
+| `npm run preview` | Serve localmente o build de produção. |
+
+## Build de produção
+
+```powershell
+npm run lint
+npm run build
+npm run preview
+```
+
+Os arquivos otimizados são gerados no diretório `dist/`.
+
+## Deploy
+
+O frontend pode ser publicado em serviços de hospedagem estática, como Vercel, Netlify ou Cloudflare Pages.
+
+Configuração utilizada no deploy:
+
+- comando de build: `npm run build`;
+- diretório de saída: `dist`;
+- variável de ambiente: `VITE_API_BASE_URL` com a URL pública da API.
+
+A origem do frontend também deve estar autorizada na configuração de CORS da API.
+
+## Limitações conhecidas
+
+- a disponibilidade das consultas depende da API e do serviço dos Correios;
+- o histórico recente existe apenas no navegador em que a consulta foi realizada;
+- limpar os dados do navegador remove o histórico local;
+- o projeto ainda não possui testes automatizados de interface.
+
+## Projeto relacionado
+
+O backend está no diretório `tracking_automatic` deste workspace. Ele utiliza FastAPI, scraping HTTP e PaddleOCR para consultar e estruturar os eventos dos Correios.
