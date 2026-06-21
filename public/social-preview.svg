@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#06111f" />
+      <stop offset="0.55" stop-color="#0f172a" />
+      <stop offset="1" stop-color="#172554" />
+    </linearGradient>
+    <linearGradient id="accent" x1="180" y1="120" x2="980" y2="520" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#60a5fa" />
+      <stop offset="1" stop-color="#a78bfa" />
+    </linearGradient>
+    <filter id="blur" x="0" y="0" width="1200" height="630" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="24" />
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg)" />
+  <circle cx="190" cy="120" r="98" fill="#2563eb" fill-opacity="0.3" filter="url(#blur)" />
+  <circle cx="1010" cy="160" r="150" fill="#8b5cf6" fill-opacity="0.22" filter="url(#blur)" />
+  <circle cx="940" cy="520" r="120" fill="#38bdf8" fill-opacity="0.18" filter="url(#blur)" />
+
+  <rect x="72" y="72" width="1056" height="486" rx="36" fill="#0b1220" fill-opacity="0.72" stroke="rgba(255,255,255,0.08)" />
+
+  <g transform="translate(110 126)">
+    <rect x="0" y="0" width="88" height="88" rx="26" fill="url(#accent)" />
+    <path d="M41.5 17c-7.5 9.4-11.6 15.4-13 18.1-2.1 4-3.2 7.8-3.2 11.5 0 8.9 6.8 16 15.3 16 8.4 0 15.2-7.1 15.2-16 0-3.7-1.1-7.5-3.2-11.5C53.1 32.4 49 26.4 41.5 17Z" fill="#fff" fill-opacity="0.95" />
+    <path d="M41.5 26c5.1 7 7.8 11.8 8.8 14 1.2 2.5 1.8 4.8 1.8 7.1 0 5.4-4.2 9.8-9.5 9.8s-9.6-4.4-9.6-9.8c0-2.3.6-4.6 1.8-7.1 1-2.2 3.7-7 8.7-14Z" fill="#dbeafe" />
+  </g>
+
+  <text x="225" y="170" fill="#dbeafe" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="34" font-weight="700" letter-spacing="0.12em">TRACKING AUTOMATIC</text>
+  <text x="110" y="260" fill="#ffffff" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="70" font-weight="800" letter-spacing="-0.04em">Rastreie seus pacotes</text>
+  <text x="110" y="328" fill="#ffffff" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="70" font-weight="800" letter-spacing="-0.04em">em segundos</text>
+  <text x="110" y="398" fill="#cbd5e1" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="30" font-weight="500">Consulte seus pacotes agora, com vários códigos e histórico local.</text>
+
+  <g transform="translate(110 442)">
+    <rect x="0" y="0" width="292" height="64" rx="999" fill="#2563eb" />
+    <text x="38" y="41" fill="#ffffff" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="26" font-weight="700">Consulte agora</text>
+  </g>
+
+  <g transform="translate(440 442)">
+    <rect x="0" y="0" width="304" height="64" rx="999" fill="#ffffff" fill-opacity="0.08" stroke="rgba(255,255,255,0.15)" />
+    <text x="34" y="41" fill="#e2e8f0" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="24" font-weight="700">Consultas recentes</text>
+  </g>
+
+  <g transform="translate(790 442)">
+    <rect x="0" y="0" width="300" height="64" rx="999" fill="#ffffff" fill-opacity="0.08" stroke="rgba(255,255,255,0.15)" />
+    <text x="30" y="41" fill="#e2e8f0" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="24" font-weight="700">Histórico local</text>
+  </g>
+
+  <text x="110" y="512" fill="#94a3b8" font-family="Inter, Segoe UI, Arial, sans-serif" font-size="22">tracking-automatic.vercel.app</text>
+</svg>

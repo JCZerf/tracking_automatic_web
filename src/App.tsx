@@ -16,9 +16,10 @@ import {
   removeRecentSearch,
 } from "./storage/recentSearches";
 
-const DEFAULT_PAGE_TITLE = "Rastreamento dos Correios | Consulte seu objeto";
+const DEFAULT_PAGE_TITLE =
+  "Tracking Automatic | Rastreie encomendas dos Correios";
 const DEFAULT_PAGE_DESCRIPTION =
-  "Consulte o status dos Correios em tempo real, acompanhe eventos e veja o histórico da entrega.";
+  "Consulte seus pacotes agora: rastreie múltiplas encomendas dos Correios em uma única tela, com acesso rápido e histórico local.";
 
 const upsertMeta = (attr: "name" | "property", key: string, value: string) => {
   const selector = `meta[${attr}="${key}"]`;
@@ -49,6 +50,7 @@ function App() {
   useEffect(() => {
     const firstResult = response?.results?.[0];
     const trackingCode = firstResult?.tracking_code ?? "";
+    const shareImage = `${window.location.origin}/social-preview.svg`;
     const title = trackingCode
       ? `${trackingCode} | Rastreamento dos Correios`
       : DEFAULT_PAGE_TITLE;
@@ -61,8 +63,10 @@ function App() {
     upsertMeta("name", "description", description);
     upsertMeta("property", "og:title", title);
     upsertMeta("property", "og:description", description);
+    upsertMeta("property", "og:image", shareImage);
     upsertMeta("name", "twitter:title", title);
     upsertMeta("name", "twitter:description", description);
+    upsertMeta("name", "twitter:image", shareImage);
   }, [response]);
 
   const searchTrackingCode = async (trackingCode: string) => {
