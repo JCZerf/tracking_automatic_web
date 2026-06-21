@@ -1,6 +1,8 @@
 import type {
+  TrackingNotFoundResult,
   TrackingResponse,
   TrackingResult,
+  TrackingSuccessResult,
 } from "../domain/tracking";
 
 type ApiErrorResponse = {
@@ -10,10 +12,10 @@ type ApiErrorResponse = {
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "");
 
-function isTrackingResult(data: unknown): data is TrackingResult {
+function isTrackingSuccessResult(data: unknown): data is TrackingSuccessResult {
   if (!data || typeof data !== "object") return false;
 
-  const response = data as Partial<TrackingResult>;
+  const response = data as Partial<TrackingSuccessResult>;
   const hasValidEvents =
     Array.isArray(response.events) &&
     response.events.every(
@@ -27,11 +29,29 @@ function isTrackingResult(data: unknown): data is TrackingResult {
     );
 
   return (
+    response.status === "success" &&
     typeof response.tracking_code === "string" &&
     typeof response.service === "string" &&
     typeof response.current_status === "string" &&
     hasValidEvents
   );
+}
+
+function isTrackingNotFoundResult(
+  data: unknown,
+): data is TrackingNotFoundResult {
+  if (!data || typeof data !== "object") return false;
+
+  const response = data as Partial<TrackingNotFoundResult>;
+  return (
+    response.status === "not_found" &&
+    typeof response.tracking_code === "string" &&
+    typeof response.message === "string"
+  );
+}
+
+function isTrackingResult(data: unknown): data is TrackingResult {
+  return isTrackingSuccessResult(data) || isTrackingNotFoundResult(data);
 }
 
 function isTrackingResponse(data: unknown): data is TrackingResponse {
@@ -73,9 +93,9 @@ export async function fetchTracking(trackingCode: string) {
     throw new Error("A URL da API não foi configurada.");
   }
 
-  const response = await fetch(
-    `${API_BASE_URL}/tracking?code=${encodeURIComponent(trackingCode)}`,
-  );
+  const query = new URLSearchParams({ code: trackingCode });
+
+  const response = await fetch(`${API_BASE_URL}/tracking?${query}`);
 
   if (!response.ok) {
     const body: unknown = await response.json().catch(() => null);

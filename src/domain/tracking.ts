@@ -4,12 +4,21 @@ export type TrackingEvent = {
   occurred_at: string;
 };
 
-export type TrackingResult = {
+export type TrackingSuccessResult = {
+  status: "success";
   tracking_code: string;
   service: string;
   current_status: string;
   events: TrackingEvent[];
 };
+
+export type TrackingNotFoundResult = {
+  status: "not_found";
+  tracking_code: string;
+  message: string;
+};
+
+export type TrackingResult = TrackingSuccessResult | TrackingNotFoundResult;
 
 export type TrackingResponse = {
   results: TrackingResult[];
@@ -18,11 +27,29 @@ export type TrackingResponse = {
 const DOCUMENT_LENGTHS = new Set([11, 14]);
 const MAX_TRACKING_CODES = 20;
 const TRACKING_CODE_PATTERN = /^[A-Z]{2}\d{9}[A-Z]{2}$/;
+const S10_WEIGHTS = [8, 6, 4, 2, 3, 5, 9, 7] as const;
 
 function isCpfOrCnpj(value: string) {
   const digits = value.replace(/\D/g, "");
   const containsOnlyDocumentCharacters = /^[\d./\-\s]+$/.test(value);
   return containsOnlyDocumentCharacters && DOCUMENT_LENGTHS.has(digits.length);
+}
+
+function hasValidS10CheckDigit(trackingCode: string) {
+  if (!TRACKING_CODE_PATTERN.test(trackingCode)) return false;
+
+  const remainder = trackingCode
+    .slice(2, 10)
+    .split("")
+    .reduce(
+      (total, digit, index) => total + Number(digit) * S10_WEIGHTS[index],
+      0,
+    ) % 11;
+  let checkDigit = 11 - remainder;
+  if (checkDigit === 10) checkDigit = 0;
+  if (checkDigit === 11) checkDigit = 5;
+
+  return Number(trackingCode[10]) === checkDigit;
 }
 
 export function parseTrackingCodes(value: string) {
@@ -43,9 +70,9 @@ export function parseTrackingCodes(value: string) {
     code.replace(/\s/g, "").toUpperCase(),
   );
 
-  if (trackingCodes.some((code) => !TRACKING_CODE_PATTERN.test(code))) {
+  if (trackingCodes.some((code) => !hasValidS10CheckDigit(code))) {
     throw new Error(
-      "Informe códigos de rastreamento válidos separados por vírgula.",
+      "Código de objeto, CPF ou CNPJ informado não está válido.",
     );
   }
   if (new Set(trackingCodes).size !== trackingCodes.length) {

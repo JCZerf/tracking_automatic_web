@@ -470,6 +470,15 @@
   font-size: 1.15rem;
 }
 
+.current-status.is-not-found {
+  background: #fffbeb;
+  border-bottom-color: #fef3c7;
+}
+
+.current-status.is-not-found strong {
+  color: #92400e;
+}
+
 .tracking-history {
   padding: 22px 20px 24px;
 }

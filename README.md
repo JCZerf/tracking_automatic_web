@@ -117,6 +117,7 @@ Exemplo resumido de resposta esperada:
 {
   "results": [
     {
+      "status": "success",
       "tracking_code": "TJ481246775BR",
       "service": "SEDEX",
       "current_status": "Objeto entregue ao destinatário",
@@ -129,16 +130,15 @@ Exemplo resumido de resposta esperada:
       ]
     },
     {
-      "tracking_code": "AP073539958BR",
-      "service": "ENCOMENDA PAC",
-      "current_status": "Objeto em transferência - por favor aguarde",
-      "events": []
+      "status": "not_found",
+      "tracking_code": "ZZ000000005BR",
+      "message": "Objeto não encontrado na base de dados dos Correios."
     }
   ]
 }
 ```
 
-O contrato sempre contém `results`, inclusive em consultas individuais. Antes de atualizar a interface, a aplicação verifica em tempo de execução se todos os resultados possuem a estrutura esperada.
+O contrato sempre contém `results`, inclusive em consultas individuais. Cada item é discriminado por `status`: `success` apresenta a timeline, enquanto `not_found` mantém a aba do código e mostra a mensagem dos Correios. Antes de atualizar a interface, a aplicação verifica em tempo de execução se todos os resultados possuem a estrutura esperada.
 
 ## Scripts disponíveis
 

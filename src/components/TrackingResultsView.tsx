@@ -66,43 +66,55 @@ export function TrackingResultsView({
             <span className="result-label">Código de rastreio</span>
             <strong>{activeResult.tracking_code}</strong>
           </div>
-          <div>
-            <span className="result-label">Serviço</span>
-            <strong>{activeResult.service}</strong>
-          </div>
-        </div>
-
-        <div className="current-status">
-          <span>Status atual</span>
-          <strong>{activeResult.current_status}</strong>
-        </div>
-
-        <div className="tracking-history">
-          <h2>Histórico do objeto</h2>
-
-          {activeResult.events.length > 0 ? (
-            <ol className="timeline">
-              {activeResult.events.map((trackingEvent, index) => (
-                <li
-                  key={`${trackingEvent.occurred_at}-${index}`}
-                  className={index === 0 ? "is-current" : undefined}
-                >
-                  <div className="event-header">
-                    <strong>{trackingEvent.description}</strong>
-                    <time dateTime={trackingEvent.occurred_at}>
-                      {formatEventDate(trackingEvent.occurred_at)}
-                    </time>
-                  </div>
-                  {trackingEvent.details.map((detail) => (
-                    <p key={detail}>{detail}</p>
-                  ))}
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <p className="no-events">Nenhum evento disponível.</p>
+          {activeResult.status === "success" && (
+            <div>
+              <span className="result-label">Serviço</span>
+              <strong>{activeResult.service}</strong>
+            </div>
           )}
         </div>
+
+        <div
+          className={`current-status${
+            activeResult.status === "not_found" ? " is-not-found" : ""
+          }`}
+        >
+          <span>Status atual</span>
+          <strong>
+            {activeResult.status === "success"
+              ? activeResult.current_status
+              : activeResult.message}
+          </strong>
+        </div>
+
+        {activeResult.status === "success" && (
+          <div className="tracking-history">
+            <h2>Histórico do objeto</h2>
+
+            {activeResult.events.length > 0 ? (
+              <ol className="timeline">
+                {activeResult.events.map((trackingEvent, index) => (
+                  <li
+                    key={`${trackingEvent.occurred_at}-${index}`}
+                    className={index === 0 ? "is-current" : undefined}
+                  >
+                    <div className="event-header">
+                      <strong>{trackingEvent.description}</strong>
+                      <time dateTime={trackingEvent.occurred_at}>
+                        {formatEventDate(trackingEvent.occurred_at)}
+                      </time>
+                    </div>
+                    {trackingEvent.details.map((detail) => (
+                      <p key={detail}>{detail}</p>
+                    ))}
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="no-events">Nenhum evento disponível.</p>
+            )}
+          </div>
+        )}
       </section>
 
       <div className="result-actions">
