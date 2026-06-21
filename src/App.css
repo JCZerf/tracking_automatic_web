@@ -770,9 +770,77 @@
   font-size: 0.9rem;
 }
 
+@media (max-width: 960px) {
+  .landing-hero {
+    grid-template-columns: 1fr;
+    padding: 28px;
+  }
+
+  .landing-hero-copy p:last-of-type {
+    max-width: none;
+  }
+
+  .landing-steps {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 640px) {
+  .app-shell {
+    padding: 26px 16px 52px;
+  }
+
   .tracker-panel {
     padding: 16px 0;
+  }
+
+  .landing-panel {
+    gap: 14px;
+  }
+
+  .landing-hero {
+    padding: 20px 16px;
+    border-radius: 16px;
+    gap: 16px;
+  }
+
+  .landing-hero-copy h1 {
+    font-size: clamp(1.55rem, 8.2vw, 2.05rem);
+    line-height: 1.15;
+  }
+
+  .landing-hero-copy p:last-of-type {
+    font-size: 0.94rem;
+  }
+
+  .landing-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .primary-cta,
+  .secondary-cta {
+    width: 100%;
+    min-height: 46px;
+  }
+
+  .landing-highlights article,
+  .landing-steps div {
+    border-radius: 14px;
+    padding: 14px;
+  }
+
+  .landing-steps h2 {
+    font-size: 0.95rem;
+  }
+
+  .landing-steps p {
+    font-size: 0.88rem;
+  }
+
+  .privacy-note {
+    font-size: 0.78rem;
   }
 
   .tracker-form {
@@ -837,6 +905,74 @@
   .footer-bottom {
     flex-direction: column;
     gap: 6px;
+  }
+}
+
+@media (max-width: 380px) {
+  .app-shell {
+    padding: 18px 12px 44px;
+  }
+
+  .site-header p {
+    font-size: 1.06rem;
+  }
+
+  .site-header span {
+    font-size: 0.78rem;
+  }
+
+  .landing-hero {
+    padding: 16px 12px;
+    border-radius: 14px;
+    gap: 14px;
+  }
+
+  .landing-hero-copy h1 {
+    font-size: clamp(1.38rem, 9vw, 1.8rem);
+  }
+
+  .landing-hero-copy p:last-of-type {
+    font-size: 0.88rem;
+  }
+
+  .landing-actions {
+    margin-top: 14px;
+  }
+
+  .primary-cta,
+  .secondary-cta {
+    min-height: 44px;
+    font-size: 0.9rem;
+  }
+
+  .landing-highlights article,
+  .landing-steps div {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .landing-highlights strong {
+    font-size: 0.92rem;
+  }
+
+  .landing-steps span {
+    width: 32px;
+    height: 32px;
+    font-size: 0.8rem;
+  }
+
+  .landing-steps h2 {
+    margin: 10px 0 6px;
+    font-size: 0.9rem;
+  }
+
+  .landing-steps p {
+    font-size: 0.84rem;
+  }
+
+  .privacy-note {
+    font-size: 0.74rem;
+    line-height: 1.45;
   }
 }
 
