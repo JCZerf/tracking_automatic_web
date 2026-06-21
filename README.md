@@ -49,6 +49,18 @@ Correios + OCR de CAPTCHA
 
 As consultas recentes são armazenadas no `localStorage`. Nenhum dado de rastreamento é persistido pelo frontend em banco de dados.
 
+### Organização do código
+
+| Diretório | Responsabilidade |
+| --- | --- |
+| `src/components/` | Layout e componentes das telas de busca e resultados. |
+| `src/domain/` | Tipos e regras de validação dos códigos de rastreamento. |
+| `src/services/` | Comunicação HTTP e validação do contrato da API. |
+| `src/storage/` | Leitura e persistência das consultas recentes. |
+| `src/utils/` | Utilitários de apresentação sem estado. |
+
+O `App.tsx` atua somente como orquestrador dos estados principais e da navegação entre as telas.
+
 ## Requisitos
 
 - Node.js `20.19+` ou `22.12+`
